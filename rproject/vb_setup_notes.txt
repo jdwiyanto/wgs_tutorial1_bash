@@ -1,0 +1,19 @@
+# VIRTUALBOX SETUP SCRIPT -- NOT FOR PARTICIPANTS 
+
+1. Download and install Oracle VM VirtualBox 6.1.40 <https://download.virtualbox.org/virtualbox/6.1.40/VirtualBox-6.1.40-154048-Win.exe>
+2. Download Ubuntu 20.04.5 LTS <https://releases.ubuntu.com/focal/ubuntu-20.04.5-desktop-amd64.iso>
+3. Create new VM in VB, along with the virtual harddisk
+4. Start machine, attach Ubuntu ISO image to optical drive (Device -> Optical Drive -> Attach Image)
+5. Restart machine, Ubuntu installation will initiate (choose minimal installation to save space)
+6. Update gcc make perl in Ubuntu by running the following:
+
+```{bash, eval=F}
+sudo apt-get
+sudo apt-get install build-essential gcc make perl dkms
+reboot
+```
+
+6. Install VB guest additions (Devices -> insert guest additions CD image)
+7. Enable bidirectional clipboard between host and guest 
+8. Solved samtools libcrypto dependencies issue in [here](https://github.com/merenlab/anvio/issues/1479)
+9. Solved Roary's perl file::find::rule module incompatbility by reinstalling Roary with bio `cpanm -f Bio::Roary` [here](https://github.com/sanger-pathogens/Roary/issues/441)

@@ -1,0 +1,999 @@
+---
+title: "WGS tutorial"
+author: "Jacky Dwiyanto"
+date: '2022-11-11'
+output: 
+  html_document:
+    code_folding: show
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+Whole-genome sequencing is quickly replacing conventional culture and thermal cycling technologies for microbiological epidemiology and profiling. However, entry into bioinformatics can be intimidating, especially for wet lab microbiologists with no prior experience in bioinformatics. Despite this, I strongly encourage everyone to have at least some basics in running dry lab processes (i.e., bioinformatics), considering that computational biology is becoming an integral part of various scientific fields, microbiology included (e.g., species composition and lifestyle association [Zhernakova et al. 2016](https://pubmed.ncbi.nlm.nih.gov/27126040/); global antibiotic resistance epidemiology tracking by [GLASS-WHO](https://www.who.int/publications/i/item/9789240011007)).
+
+Learning bioinformatics is essentially learning how to communicate with computer using computer languages, like Bash, Python, and R. Just like learning a new verbal language, fluency is determined by our vocabulary list and familiarity with the grammatical rules. Starting out, we will understandably struggle due to our limited vocabulary. With regular usage, however, I promise you that coding and scripting will not be any more difficult than engaging in a conversation with someone in our native language. 
+
+I have prepared this guide to walk you through a typical workflow of microbiological screening and epidemiology tracking using short-read whole-genome sequence data. The data I used is [publicly available](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA752611), and the workflow is the one used in my recent publication on the epidemiology of ESBL-producing *Escherichia coli* in Malaysia ([Dwiyanto et al. 2022](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0265142)). I will go through each step taken for the data analysis, from raw sequence output to the clean figures and tables we can embed in our research paper or microbiological report. 
+
+## Sample data for analysis
+
+We have pre-downloaded some *Escherichia coli* ST131 whole-genome sequence data ([Dwiyanto et al. 2022](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0265142)) in your workstation. As bioinformatics involve long sample processing time (ranging from hours to days, depending on computational resources and number of samples), we will work on subsampled data to shorten processing time, so we can focus on the important tasks at hand.
+
+## Working with Ubuntu operating system
+
+This tutorial will guide you through a typical workflow to process whole-genome sequence data in Ubuntu operating system. Don't worry if you have no prior experience in using Ubuntu; we will guide you through each step of the analysis process from start to completion. 
+
+## Accessing Ubuntu
+
+[VirtualBox](https://www.virtualbox.org/) is a software which allows you to run a virtual computer within your current workstation. This is a practical solution if you don't already have a Ubuntu operating system and would like to try out Ubuntu without committing a full installation in your workstation. Alternatively, you can use the Windows sub-Linux (WSL) system within Windows 10 or later, which you can check out [here](https://learn.microsoft.com/en-us/windows/wsl/install). Note that a clean install (either WSL or fresh Ubuntu install) will require you to set up the programs and dependencies needed to run the pipeline. 
+
+If you choose VirtualBox, you can later [import](https://docs.oracle.com/cd/E26217_01/E26796/html/qs-import-vm.html) a Ubuntu image I have prepared containing all the required programs and its dependencies to start the tutorial.
+
+## Step 1: Finding your way around Ubuntu
+
+### 1.1 Accessing your Ubuntu workstation in VirtualBox
+
+First, download the Ubuntu virtual machine image I have prepared [here](https://1drv.ms/u/s!Aq5yN9KqAHVy6U1lUAFUy9T34LOM?e=QCV4eB). If you are prompted for a password, fill in "password". Afterwards, open your VirtualBox program, then [import](https://docs.oracle.com/cd/E26217_01/E26796/html/qs-import-vm.html) the downloaded image to VirtualBox. After completing the above steps, you should see 'ubuntu_20_04_5' Highlight this, and then start the instance.
+
+Username is "jdwiyanto" and password is "password". 
+
+![](input/vb1.png){width=800px}
+
+Give the machine some time to load until you see a Desktop screen.
+
+![](input/vb2.png){width=800px}
+
+You are now ready to start your analysis. We want to open the terminal of Ubuntu by pressing CTRL+ALT+T in your keyboard. You can also do this manually by clicking on the nine dots menu button on the bottom left corner, then clicking on the 'Terminal' icon. 
+
+![](input/vb3.png){width=800px}
+
+A new screen will pop out, and this is where we will conduct our bioinformatics analysis.
+
+![](input/vb4.png){width=800px}
+
+### 1.2 Getting familiar with some basic commands in Ubuntu
+
+Working with Ubuntu involves the usage of command lines to run our processes. We will use this time to explore some basic commands and terms that we will use in our analysis later on.
+
+**Working Directory**
+In Ubuntu, we need to be constantly aware where our current working directory is. In the terminal, we can see our working directory in the blue-coloured text that followed our username. The default working directory is a "~", which is short form for "/home/username". 
+
+![](input/vb4.1.png){width=800px}
+
+**List**
+From our home directory, we can list the files and folders using the command `ls`; which stands for "list". Let's try that now.
+
+```{bash eval=F}
+ls
+```
+
+![](input/vb4.2.png){width=800px}
+
+**Change directory**
+Let's change our working directory to Desktop. We will use the `cd` command, which stands for "change directory". 
+
+```{bash eval=F}
+cd Desktop
+```
+
+After executing the above command, notice how the blue-coloured text besides our username changes from "~" to "~/Desktop". This indicates that we are now working on Desktop instead of our home directory.
+
+![](input/vb4.3.png){width=800px}
+
+**Make directory**
+Make directory is the same as creating a new folder in Windows. We can create a new directory (i.e. folder) using the command `mkdir`. For example, let's create a folder named "this_is_a_folder":
+
+```{bash eval=F}
+mkdir this_is_a_folder
+```
+
+After you run the above command, you can type and run `ls` and notice that the Desktop now has a new folder called "this_is_a_folder". 
+
+![](input/vb4.4.png){width=800px}
+
+Try minimising the Terminal. You can also see the folder you have just created in your Desktop.
+
+![](input/vb4.5.png){width=800px}
+
+**Creating a simple text file**
+We can also write statements in the Terminal and save them to a text file. We can do this using the `echo` command. For example:
+
+```{bash eval=F}
+echo This is a statement
+```
+
+![](input/vb4.6.png){width=800px}
+
+Notice that the Terminal returns the output statement of "This is a statement". We can direct this output to a new file by using the `>` sign. For example:
+
+```{bash eval=F}
+echo This is a statement > this_is_a_file.txt
+```
+
+This time, there is no output of "This is a statement" in the Terminal, because the output has been directed to a file called "this_is_a_file.txt". You can run `ls` to see that a new file has now been created:
+
+![](input/vb4.7.png){width=800px}
+
+You can also find the new text file in your Desktop.
+
+![](input/vb4.8.png){width=800px}
+
+**Reading a file**
+Let's try reading our newly created text file from the Terminal. We can utilise the `cat` command, which stands for "concatenate".
+
+```{bash eval=F}
+cat this_is_a_file.txt
+```
+
+![](input/vb4.9.png){width=800px}
+Notice how it reads the text file and returns the content in the Terminal. This is the same as double-clicking and opening the file as you would in Windows.
+
+![](input/vb4.10.png){width=800px}
+
+**Copying and moving a file** 
+Let's now move the text file into the folder. We can use the `mv` command with the following structure: mv \<file\> \<target_directory\>. For example:
+
+```{bash eval=F}
+mv this_is_a_file.txt this_is_a_folder
+```
+
+This will move the file to the folder. If you run `ls`, you will see that the file is not in the Desktop anywhere. Instead, you can find it inside the this_is_a_folder folder.
+
+![](input/vb4.11.png){width=800px}
+
+You can also copy file to a new directory by using `cp` instead of `mv`.
+
+Now let's move back to our home directory. We can do this by running `cd`
+
+```{bash eval=F}
+cd
+```
+
+Ensure that your working directory is back to "~".
+
+**Quiz**: Create a new folder in ~/Desktop, name it "my_folder".
+```{bash eval=F, class.source = 'fold-hide'}
+mkdir ~/Desktop/my_folder
+```
+
+**Quiz**: Move "this_is_a_file.txt" from "this_is_a_folder" back to Desktop.
+```{bash eval=F, class.source = 'fold-hide'}
+mv ~/Desktop/this_is_a_folder/this_is_a_file.txt ~/Desktop/
+```
+
+**Quiz**: Move the previously generated "this_is_a_folder" into "my_folder".
+```{bash eval=F, class.source = 'fold-hide'}
+mv ~/Desktop/this_is_a_folder ~/Desktop/my_folder/
+```
+
+**Quiz**: Move the previously generated "this_is_a_file.txt" into "this_is_a_folder". The final directory should be `~/my_folder/this_is_a_folder/this_is_a_file.txt`
+```{bash eval=F, class.source = 'fold-hide'}
+mv ~/Desktop/this_is_a_file.txt ~/Desktop/my_folder/this_is_a_folder/
+```
+
+**Quiz**:Copy "this_is_a_file.txt" into "my_folder", and name it as "this_is_a_copy.txt"
+
+```{bash eval=F, class.source = 'fold-hide'}
+cp ~/Desktop/my_folder/this_is_a_folder/this_is_a_file.txt ~/Desktop/my_folder/this_is_a_copy.txt
+```
+
+**Quiz**:List down the files and folders inside "my_folder", and return the output to a new text file named "list_of_files.txt" in Desktop. 
+
+```{bash eval=F, class.source = 'fold-hide'}
+ls ~/Desktop/my_folder > ~/Desktop/list_of_files.txt
+```
+
+Your final folder structure should look like the following:
+
+![](input/quiz1.png)
+
+Now that you are familiar with the basic commands of Ubuntu, we are ready to start our bioinformatics analysis. Let's move back to our home directory by typing `cd`
+
+```{bash eval=F}
+cd
+```
+
+### 1.3 (Optional) Downloading public NCBI sequences using sra-tools
+
+If you are not using the prepared Ubuntu virtual image and is starting from scratch (either in WSL or your own Ubuntu operating system), you will have to download the raw sequence data used in this tutorial. We can do this by using a tool called "sra-tools", which is a program to access and download sequence data from the NCBI database
+
+In Ubuntu, access your terminal and install sra-tools. You may find the latest version through the official link [here](https://github.com/ncbi/sra-tools/wiki/01.-Downloading-SRA-Toolkit). We can then type the following script in our Ubuntu terminal to download the sra-tools package:
+
+```{bash, eval=F}
+wget https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/3.0.0/sratoolkit.3.0.0-ubuntu64.tar.gz
+```
+
+Once you completed the download, if you run `ls` command in your terminal, you should be able to see a file named `sratoolkit.3.0.0-ubuntu64.tar.gz`, or whatever version that you have downloaded.
+
+We now want to unpack the program, sort of like an installation of the package. In Ubuntu, we can do this by running the following command in the terminal:
+
+```{bash, eval=F}
+tar -xzvf sratoolkit.3.0.0-ubuntu64.tar.gz
+```
+
+If you run the `ls` command again, you should now see a new folder named `sratoolkit.3.0.0-ubuntu64` in addition to the tar.gz compiled binary that we downloaded earlier. This folder contains all the files and data needed by sra-tools to run, similar to the program files folder in Windows containing all the programs that you have installed.
+
+Currently, if you want to run sra-tools, you will need to explicitly state the directory path to the specific tools that you need to run this command. For example, if you want to run the function `fasterq-dump` from sra-tools, you will need to type:
+
+```{bash eval=F}
+sratoolkit.3.0.0-ubuntu64/bin/fasterq-dump
+```
+
+Which is functional, but not very efficient. What we need to do is to let Ubuntu to automatically recurse through the sra-tools folder when we run the `fasterq-dump` command instead of having to explicitly tell Ubuntu where to look. This is like creating a desktop shortcut for the program instead of having to access C:/Program Files/program/program.exe everytime you want to run the program.
+
+In Ubuntu, we can create this shortcut by setting the path to sra-tools as a default bash environmental path. We can do this by typing the following in the terminal:
+
+```{bash eval=F}
+export PATH=$PATH:$PWD/sratoolkit.3.0.0-ubuntu64/bin
+```
+
+Now you should be able to run `fasterq-dump` without typing the whole directory path. Try it:
+
+```{bash eval=F}
+fasterq-dump
+```
+
+It works, but the output asks you to do some configuration before you can use the command. We need to do a quick configuration of sra-tools before we can use it. Run the following command in your terminal:
+
+```{bash eval=F}
+vdb-config -i
+```
+
+Which will then display the following in your terminal:
+
+![](input/sratools_configure1.png){width=600px}
+
+You can use your keyboard arrows, `TAB` and `Return` in your keyboard to navigate. The important thing here is to navigate into the `CACHE` tab, and then set the location of user-repository to a local directory in your workstation. Press on it, then navigate to the `Create Dir` option, and create a new directory called `ncbi_cache`, highlight the `ncbi_cache` directory, then press 'OK'. 
+
+![](input/sratools_configure2.png){width=600px}
+
+![](input/sratools_configure3.png){width=600px}
+
+![](input/sratools_configure4.png){width=600px}
+
+![](input/sratools_configure5.png){width=600px}
+
+![](input/sratools_configure6.png){width=600px}
+
+Next, go to the `AWS` tab, and check `report cloud instance identity`. Do the same at the `GCP` tab. 
+
+![](input/sratools_configure7.png){width=600px}
+
+Afterwards, you can save and exit the configuration screen. This time, try running the fasterq-dump command, and you should see a list of options, indicating that sra-tools has successfully been configured and ready to run.
+
+![](input/sratools_fasterqdump.png){width=600px}
+
+Now that we have successfully installed and configured sra-tools, we can start downloading our sequence data. Before that, let's keep an organised workspace by creating a new directory to store all our analysis files. Let's name this directory 'wgs_tutorial'.
+
+```{bash eval=F}
+mkdir wgs_tutorial_new
+```
+
+We then create another new directory named 'raw' inside the 'wgs_tutorial' folder to store all our raw sequence data.
+
+```{bash eval=F}
+mkdir wgs_tutorial_new/raw
+```
+
+Now, let's use the `fasterq-dump` function to download our sequence of interest:
+
+```{bash eval=F}
+fasterq-dump -p -x -e 8 SRR15359955 SRR15359954 SRR15359962 SRR15359969 SRR15359972
+```
+
+Which should show you that the the program is now downloading the sequences that we have provided. 
+
+![fasterq-dump download progress](input/sratools_fasterqdump2.png){width=600px}
+
+It will take some time to download these files since whole genome sequences are relatively large (~1 GB per sample). But once the process is completed, you have now successfully downloaded public sequence data from NCBI into your local workstation. Confirm that the file has been downloaded by running the `ls` command:
+
+```{bash eval=F}
+ls *fastq
+```
+
+You should see ten files, two for each sample as a forward and reverse sequence data.
+
+Let's keep an organised workspace by storing all fastq files into the 'raw' folder inside 'wgs_tutorial'. 
+
+```{bash, eval=F}
+mv *fastq wgs_tutorial_new/raw/
+```
+
+To prepare the list of file names you will need in the next section, you can run the following:
+
+```{bash eval=F}
+ls wgs_tutorial_new/raw/ | sed 's/_[12].fastq//' | uniq > wgs_tutorial_new/names.txt
+```
+
+**Note** that if you download the sequences from NCBI, the names will be in the SRA format (e.g. SRR########), whereas the pre-downloaded sample files for the tutorial has been renamed to "clinA, clinB, commA...commC". Please adjust accordingly. Additionally, the NCBI sequences are in the original sizes, which will take a long time to process. You can download and install [seqtk ](https://github.com/lh3/seqtk) using the following command:
+
+```{bash eval=F}
+git clone https://github.com/lh3/seqtk.git;
+cd seqtk; make
+```
+
+and run the following on your public NCBI sequences to rarefy them to a smaller read depth, e.g. 160000:
+
+```{bash eval=F}
+seqtk sample -s100 <sample_1.fastq> 160000 > <sample_subsampled_1.fastq>
+```
+
+Now, we are ready to start our analysis! The next section will guide you on how to conduct a quality control on your sequence data. 
+
+### 1.4 Exploring raw data for WGS analysis
+
+**Quiz**: Using what you've learned in the previous section, change your working directory from "~" to "~/wgs_tutorial_new".
+
+```{bash eval=F, class.source = 'fold-hide'}
+cd wgs_tutorial_new
+```
+
+If you do it correctly, you should see the following username:workdirectory in your Terminal:
+
+![](input/vb4.12.png){width=800px}
+
+**Quiz**: How many folders are there inside the "wgs_tutorial_new" folder?
+
+```{bash eval=F, class.source = 'fold-hide'}
+ls 
+```
+
+**Quiz** How many files are inside the "raw" folder?
+
+```{bash eval=F, class.source = 'fold-hide'}
+ls raw/
+```
+
+The "raw" folder contains the fastq sequences which we will work on. First, let's do a quick exploration of our fastq files. 
+
+**Quiz** How do you view the content of clinA_1.fastq in the Terminal?
+
+```{bash eval=F, class.source = 'fold-hide'}
+cat raw/clinA_1.fastq # this returns the whole fastq document
+head -n 10 raw/clinA_1.fastq # this returns the top 10 line of the fastq file
+```
+
+Once you have read the clinA_1.fastq, notice how a fastq file contains four lines of information per read:
+
+* read identifier: @clinA.20 20 length=301
+* base call: CCAGT...
+* \+ sign
+* quality of base calls: CCCCCGCAF<F...
+
+![](input/vb4.13.png){width=800px}
+
+You will find that these files follow the \<samplename_1.fastq\> \<samplename_2.fastq\> structure. _1.fastq refers to the forward sequence of your sequencing data, while _2.fastq is your reverse sequence. You will have this format when you run your next-generation sequencing in a paired-end format. 
+
+## Step 2: Preprocessing fastq sequence data using fastp
+
+The first step of any workflow involving next-generation sequence data is to conduct a quality check on the sequences and remove any sequencing adapter and low quality sequences. I like to use [fastp](https://github.com/OpenGene/fastp) due to its automated process, giving it speed and scalability, especially when we are running comparative genomics of multiple samples. Alternatively, we can also use [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) for report generation, combined with [cutadapt](https://cutadapt.readthedocs.io/en/stable/) to trim low quality sequences based on the FastQC report.
+
+Make sure that your working directory is set to "~/wgs_tutorial_new". Let's try fastp for one of our samples, 'clinA'. We can produce the report using the following command:
+
+```{bash eval=F}
+fastp -i raw/clinA_1.fastq -I raw/clinA_2.fastq -h clinA.html
+```
+
+The above command is typical in Ubuntu bioinformatics run, where you specify the tools you want to invoke (in this case, fastp), and provides follow up details to the command. 
+
+* `-i` refers to the location of the forward sequence, 
+* `-I` refers to the location of the reverse sequence, while 
+* `-h` refers to the name of the report to be generated. 
+
+You can see the full list of commands by typing `fastp --help`.
+
+If you type `ls`, you will see that fastp has produced a QC report for our sample, clinA.html. We can open this report by opening "Files" from the list of icons on the left, then find the "wgs_tutorial_new" folder. Inside this folder, you will find the clinA.html file. Double-click on this file to open it in our web browser.
+
+![](input/fastp1.png){width=800px}
+
+The first part of the report gives you a general summary of our sequence data. You will find information on the read length of our samples, the Q20 and Q30 proportion, and the GC content ratio of our samples. 
+
+There is no hard rule on the quality threshold of sequence data, although the higher % of Q20 and Q30 is favourable (>90%). We will talk more about this in later sections. Meanwhile, the GC content ratio can be compared with known literature value of GC content to confirm our sequencing result as well.
+
+Our sample have proportions of Q20 and Q30 in the isolates of ~88% and 76% before filtering, which is improved to ~90% and ~80% after filtering. Generally I consider Q20 > 90% as sufficient.
+
+Our sample belongs to *E. coli*, which has GC content around 50-51%. The report indicates the GC content of our sample at ~51%, which is aligned with the reported value in literature.
+
+![](input/fastp1.1.png){width=800px}
+
+The next section looks at the number of adapter sequences that fastp detected. In this case, fastp detected around ~200,000 adapter sequences, which they will then remove.
+
+![](input/fastp2.png){width=800px}
+
+The next section looks at the distribution of insert sizes from our sequencing data. Illumina system typically result in insert sizes between 200-800 bp, which is aligned with our result.
+
+![](input/fastp3.png){width=800px}
+
+The next section looks at the quality of our sequences from the start to the end of the sequencing process. Notice the sequence drop as the sequencing proceeds, with the last couple of base pairs having the lowest sequencing quality compared to the beginning sequences. Again, there is no hard rule on sequencing quality threshold, although it is preferable to have the majority of our sequences >Q20 value. From this example, we see that the lowest quality of the forward sequence is still >Q20, which means that our sequence data is still of reasonable quality.
+
+![](input/fastp4.png){width=800px}
+
+You will also find the GC content distribution of the sequences, which is aligned with the summary section we see earlier in the report.
+
+![](input/fastp5.png){width=800px}
+
+Finally, fastp also provides report on the 5-mer distribution found in our sequence data, which you can refer should you have the specific 5-mer profile that you expect from your isolates for further confirmation.
+
+![](input/fastp6.png){width=800px}
+
+The rest of the report looks at the same sections for the reverse read, and also provides the profile after the automated filtering by fastp. 
+
+The main advantage of using fastp is its ability to automatically detect contaminants and low quality sequences in our samples, enabling the automation and upscaling of quality control when working with large amount of samples. We can start this by running fastp again, but this time we will save the QC-ed fastq sequence.
+
+Firstly, let's create a folder named `fastp_out`. We shall then store all fastp-processed files here.
+
+**Quiz**: Create a folder inside "wgs_tutorial_new" working directory, named "fastp_out".
+
+```{bash, eval=F, class.source = 'fold-hide'}
+mkdir fastp_out
+```
+
+**Quiz**: In the above fastp example to generate the QC report, you have worked with the `-i`, `-I`, `-w`, and `-h` arguments within `fastp`. Now run fastp on clinA again, but save the QC-ed forward and reverse sequences to the fastp_out folder you have created. Use the following references to help you write your script:
+
+* -i: input forward sequence
+* -I: input reverse sequence
+* -o: output forward sequence
+* -O: output reverse sequence
+* -h: html report name
+* -j: json report name
+* -w: number of processing core
+
+```{bash, eval=F, class.source = 'fold-hide'}
+fastp \
+-i raw/clinA_1.fastq \
+-I raw/clinA_2.fastq \
+-o fastp_out/clinA_1.fastq \
+-O fastp_out/clinA_2.fastq \
+-h fastp_out/clinA.html \
+-j fastp_out/clinA.json \
+-w 6
+```
+
+Once the run is completed, you can find the cleaned fastq sequences on the "fastp_out" directory.
+
+![](input/fastp7.png){width=800px}
+
+**Quiz**: Read the top 16 lines of the raw clinA_1.fastq and the cleaned clinA_1.fastq. Do you notice any difference between the raw and cleaned sample?
+
+```{bash, eval=F, class.source = 'fold-hide'}
+head -n 16 raw/clinA_1.fastq
+head -n 16 fastp_out/clinA_1.fastq
+
+# Notice how read .1, .2, .3 is removed in the cleaned file. 
+# Notice how the nucleotide length per read has been trimmed from 301 to 150+
+```
+
+Congratulations, you have successfully run fastp on a single sample. However, now we want to run fastp on the remaining four samples. How do we do this?
+
+**Easy but inefficient way**: 
+
+```{bash, eval=F, class.source = 'fold-hide'}
+fastp \
+-i raw/clinA_1.fastq \
+-I raw/clinA_2.fastq \
+-o fastp_out/clinA_1.fastq \
+-O fastp_out/clinA_2.fastq \
+-h fastp_out/clinA.html \
+-j fastp_out/clinA.json \
+-w 6
+
+fastp \
+-i raw/clinB_1.fastq \
+-I raw/clinB_2.fastq \
+-o fastp_out/clinB_1.fastq \
+-O fastp_out/clinB_2.fastq \
+-h fastp_out/clinB.html \
+-j fastp_out/clinB.json \
+-w 6
+
+fastp \
+-i raw/commA_1.fastq \
+-I raw/commA_2.fastq \
+-o fastp_out/commA_1.fastq \
+-O fastp_out/commA_2.fastq \
+-h fastp_out/commA.html \
+-j fastp_out/commA.json \
+-w 6
+
+fastp \
+-i raw/commB_1.fastq \
+-I raw/commB_2.fastq \
+-o fastp_out/commB_1.fastq \
+-O fastp_out/commB_2.fastq \
+-h fastp_out/commB.html \
+-j fastp_out/commB.json \
+-w 6
+
+fastp \
+-i raw/commC_1.fastq \
+-I raw/commC_2.fastq \
+-o fastp_out/commC_1.fastq \
+-O fastp_out/commC_2.fastq \
+-h fastp_out/commC.html \
+-j fastp_out/commC.json \
+-w 6
+```
+
+The above code works, but imagine if we have 1000 samples to process, then it quickly becomes impossible and prone to human errors.
+
+**Introducing the while-loop**
+
+One advantage of working in Ubuntu is its ability to run the same program on large amount of samples in a single click. Using the fastp example, we can utilise the while-loop to let Ubuntu run the same function on different files.
+
+In your working directory, you will find a file named 'names.txt' which contains all the sample names for our tutorial. 
+
+**Quiz**: Read the file to Terminal
+
+```{bash, eval=F, class.source = 'fold-hide'}
+cat names.txt
+```
+
+We can use while-loop to run the same functions on different files using a single command. The basic structure for a while-loop is `while read line; do <function> $line; done; < sample.txt`. 
+
+For example, we can use while-loop to create five folders using the lines in names.txt using the following command:
+
+```{bash eval=F}
+while read line; do mkdir testfolder_${line}; done < names.txt
+```
+
+![](input/whileloop1.png){width=800px}
+
+Another example, we can call out the name of the samples iteratively on Terminal using the following command:
+
+```{bash eval=F}
+while read line; do echo The sample name is ${line}; done < names.txt
+```
+
+![](input/whileloop2.png){width=800px}
+
+**Quiz**: Use while-loop run fastp iteratively on all five samples. 
+
+```{bash eval=F, class.source = 'fold-hide'}
+while read line; do \
+fastp -i raw/${line}_1.fastq \
+-I raw/${line}_2.fastq \
+-o fastp_out/${line}_1.fastq \
+-O fastp_out/${line}_2.fastq \
+-h fastp_out/${line}.html \
+-j fastp_out/${line}.json \
+-w 6; done < names.txt
+```
+
+Once we completed the quality control for all our samples, we can proceed to screen for MLST, antibiotic resistance genes, and plasmid groups using SRST2
+
+## Step 3: Screen for MLST, antibiotic resistance genes, and plasmid groups using SRST2
+
+We will work within the [conda environment](https://docs.conda.io/en/latest/), which is a computational environment which makes it easy to install and run bioinformatics algorithms in Ubuntu. 
+
+Let's take a look at how we can use whole genome sequence data to perform an *in silico* PCR for MLST identification. We will use SRST2 for this purpose (read the paper [here](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-014-0090-6) and the source code [here](https://github.com/katholt/srst2)). First, let's activate the SRST2 environment via conda. We do this by typing:
+
+```{bash, eval=F}
+conda activate srst2
+```
+
+Make sure that you are inside the SRST2 conda environment. You can confirm this by looking at the leftmost part of your username in the Terminal.
+
+![](input/conda1.png){width=800px}
+
+Before we can start screening the MLST profiles of our isolates, we first need to download the fasta database as a reference for the SRST2 algorithm. Since our sample data belongs to Escherichia coli, we will download the MLST database for E. coli. 
+
+```{bash, eval=F}
+getmlst.py --species 'Escherichia coli#1'
+```
+
+This command produces several files in our directory:
+
+* alleles_fasta
+* Escherichia_coli#1.fasta
+* mlst_data_download_Escherichia_coli#1_None.log
+* profiles_csv
+
+![](input/srst1.png){width=800px}
+
+Let's organise our work environment by moving them all into a single folder named `srst2_db_mlst`. 
+
+**Quiz**: move alleles_fasta, Escherichia_coli#1.fasta, mlst_data_download_Escherichia_coli#1_None.log, and profiles_csv into a folder called srst2_db_mlst
+
+```{bash eval=F, class.source = 'fold-hide'}
+mkdir srst2_db_mlst
+mv alleles_fasta Escherichia_coli#1.fasta mlst_data_download_Escherichia_coli#1_None.log profiles_csv srst2_db_mlst
+```
+
+Let's also create a folder named 'srst2_out_mlst' to store all our srst2 MLST run output.
+
+**Quiz**: create a folder named srst2_out_mlst'.
+
+```{bash eval=F, class.source = 'fold-hide'}
+mkdir srst2_out_mlst
+```
+
+Now we are ready to run MLST profiling by running the following SRST2. Below is the template for the function. Can you complete the blank field denoted by the <> sign below?
+
+```{bash, eval=F}
+srst2 \
+--threads 6 \
+--input_pe <location/to/sample_1.fastq> <location/to/sample_2.fastq> \ # complete this field
+--output srst2_out_mlst/clinA \
+--log \
+--mlst_db srst2_db_mlst/Escherichia_coli#1.fasta \
+--mlst_definitions srst2_db_mlst/profiles_csv \
+--mlst_delimiter _
+```
+
+```{bash, eval=F, class.source = 'fold-hide'}
+srst2 \
+--threads 6 \
+--input_pe fastp_out/clinA_1.fastq fastp_out/clinA_2.fastq \
+--output srst2_out_mlst/clinA \
+--log \
+--mlst_db srst2_db_mlst/Escherichia_coli#1.fasta \
+--mlst_definitions srst2_db_mlst/profiles_csv \
+--mlst_delimiter _
+```
+
+Where:
+
+* --threads: number of CPU to run the process
+* --input_pe: location of the forward and reverse sequence
+* --output: location to store the analysis output
+* --log: store the log file 
+* --mlst_db: location of the MLST database fasta file
+* --mlst_definitions: location of the MLST database profiles_csv file
+* --mlst_delimiter: delimiter in profiles_csv file
+
+**Quiz**: Now, we need to run this on all five samples. Can you come up with the correct command using a while-loop structure?
+
+```{bash eval=F, class.source='fold-hide'}
+while read line; do \
+srst2 \
+--threads 6 \
+--input_pe fastp_out/${line}_1.fastq fastp_out/${line}_2.fastq \
+--output srst2_out_mlst/${line} \
+--log \
+--mlst_db srst2_db_mlst/Escherichia_coli#1.fasta \
+--mlst_definitions srst2_db_mlst/profiles_csv \
+--mlst_delimiter _; done < names.txt
+```
+
+The above run will take a while to complete, so let's CTRL+C to cancel the run. Instead, let's copy over the pre-computed output files to our working directory by pasting the command below:
+
+```{bash eval=F}
+rm -rf srst2_out_mlst
+cp -r ~/wgs_completed/srst2_out_mlst/ .
+```
+
+SRST2 will output a summary file named clinA__mlst__Escherichia_coli#1__results.txt. You can read this file using the `cat` command, which will confirm that we are working with Escherichia coli ST131.
+
+```{bash eval=F, class.source='fold-hide'}
+cat srst2_out_mlst/clinA__mlst__Escherichia_coli#1__results.txt
+```
+
+![](input/srst2_mlst2.png){width=800px}
+
+Now that we know how to identify MLST type using SRST2, we can use the same approach to screen for antibiotic resistance genes using the CARD database, and plasmids using Plasmid replicon and PlasmidFinder databases. 
+
+**Quiz**: Let's first create a folder called 'srst2_db_genes', where we will store our database for antibiotic and plasmid genes. 
+
+```{bash eval=F, class.source = 'fold-hide'}
+mkdir srst2_db_genes
+```
+
+Now, we need to download these databases and store them in a folder named srst2_db_genes using the following script:
+
+```{bash, eval=F}
+wget https://raw.githubusercontent.com/katholt/srst2/master/data/CARD_v3.0.8_SRST2.fasta https://raw.githubusercontent.com/katholt/srst2/master/data/Plasmid18Replicons.fasta https://raw.githubusercontent.com/katholt/srst2/master/data/PlasmidFinder.fasta
+```
+
+The above command will download three fasta files from the internet, which we will use as the reference database for antibiotic resistance and plasmid screening. 
+
+**Quiz**: Let's move these three files into the srst2_db_genes folder we have created earlier.
+
+```{bash eval=F, class.source = 'fold-hide'}
+mv CARD_v3.0.8_SRST2.fasta Plasmid* srst2_db_genes
+```
+
+**Quiz**: Now, create a folder named srst2_out_genes, where we will output the result of our srst2 genes run
+
+```{bash eval=F, class.source = 'fold-hide'}
+mkdir srst2_out_genes
+```
+
+Now that we have the databases, we can once again employ SRST2, but instead of invoking the --mlst_db parameter, we invoke the --gene_db parameter. From what you've learned in the MLST run, complete the template function below to run SRST2 based on the PlasmidFinder reference FASTA file you have just downloaded.
+
+```{bash, eval=F}
+srst2 \
+--threads 6 \
+--input_pe <insert parameter here> \ # insert parameter here
+--output srst2_out_genes/clinA \
+--log \
+--gene_db <insert parameter here> # insert parameter here
+```
+
+Where:
+
+* --gene_db: location to database for antibiotic resistance and plasmid classes
+
+```{bash, eval=F, class.source = 'fold-hide'}
+
+# this command will run CARD
+srst2 \
+--threads 6 \
+--input_pe fastp_out/clinA_1.fastq fastp_out/clinA_2.fastq \
+--output srst2_out_genes/clinA \
+--log \
+--gene_db srst2_db_genes/PlasmidFinder.fasta 
+```
+
+**Note** This run will take approximately five minutes
+
+We can see the presence of antibiotic resistance genes by using the `cat` command:
+
+```{bash eval=F}
+cat srst2_out_genes/clinA__genes__PlasmidFinder__results.txt
+```
+
+Which shows that our sample possessed the Col1156 and ColMG828 plasmids
+
+![](input/srst3.png){width=800px}
+
+Now run SRST2 again, this time input all three reference FASTA files that you have downloaded earlier in the --gene_db parameter:
+
+```{bash, eval=F, class.source = 'fold-hide'}
+
+# this command will run CARD, PlasmidFinder and PlasmidReplicon together
+srst2 \
+--threads 6 \
+--input_pe fastp_out/clinA_1.fastq fastp_out/clinA_2.fastq \
+--output srst2_out_genes/clinA \
+--log \
+--gene_db srst2_db_genes/CARD_v3.0.8_SRST2.fasta srst2_db_genes/PlasmidFinder.fasta srst2_db_genes/Plasmid18Replicons.fasta
+```
+
+![](input/srst4.png){width=800px}
+
+```{bash eval=F}
+cat ~/wgs_completed/srst2_out_genes/clinA__genes__CARD_v3.0.8_SRST2__results.txt
+cat ~/wgs_completed/srst2_out_genes/clinA__genes__PlasmidFinder__results.txt
+cat ~/wgs_completed/srst2_out_genes/clinA__genes__Plasmid18Replicons__results.txt
+```
+
+![](input/srst5.png){width=800px}
+
+**Quiz**: Now we need to run SRST2 on all samples. Use the while-loop to run SRST2 on all samples
+
+```{bash, eval=F, class.source = 'fold-hide'}
+
+while read line; do \
+srst2 \
+--threads 6 \
+--input_pe fastp_out/${line}_1.fastq fastp_out/${line}_2.fastq \
+--output srst2_out_genes/${line} \
+--log \
+--gene_db srst2_db_genes/CARD_v3.0.8_SRST2.fasta srst2_db_genes/PlasmidFinder.fasta srst2_db_genes/Plasmid18Replicons.fasta; done < names.txt
+
+```
+
+### Combining the output of SRST2
+
+To get a more meaningful output, we cannot rely on the output of our subsampled data (which we used to hasten the analysis process). Let's copy over the pre-computed output files to our working directory by pasting the command below:
+
+```{bash eval=F}
+rm -rf srst2_out_genes
+cp -r ~/wgs_completed/srst2_out_genes/ .
+```
+
+To ease comparison between samples, we can compile the observed genes and MLST of all our samples into a single file. We can run this using the following commands:
+
+```{bash eval=F}
+# for MLST 
+srst2 --prev_output srst2_out_mlst/*__mlst__* --output srst2_out_mlst/srst2_out_mlst_compiled
+
+# for plasmidFinder
+srst2 --prev_output srst2_out_genes/*__genes__PlasmidFinder__results.txt --output srst2_out_genes/srst2_out_plasmidfinder_compiled
+
+# for PlasmidReplicons
+srst2 --prev_output srst2_out_genes/*__genes__Plasmid18Replicons__results.txt --output srst2_out_genes/srst2_out_plasmidreplicon_compiled
+
+# for CARD
+srst2 --prev_output srst2_out_genes/*__genes__CARD_v3.0.8_SRST2__results.txt --output srst2_out_genes/srst2_out_card_compiled
+```
+
+
+Let's take a look at the compiled MLST file. Notice that all five samples belonged to ST131, as reported in the publication.
+
+```{bash eval=F}
+cat srst2_out_mlst/srst2_out_mlst_compiled__compiledResults.txt 
+```
+
+![](input/srst6.png){width=800px}
+
+Similarly, we can see the difference in plasmid and antibiotic resistance genes carried by the samples through the compiled results.
+
+```{bash eval=F}
+cat srst2_out_genes/srst2_out_card_compiled__compiledResults.txt 
+cat srst2_out_genes/srst2_out_plasmidfinder_compiled__compiledResults.txt 
+cat srst2_out_genes/srst2_out_plasmidreplicon_compiled__compiledResults.txt 
+```
+
+![](input/srst7.png){width=800px}
+
+![](input/srst8.png){width=800px}
+
+![](input/srst9.png){width=800px}
+
+## Step 4: Sequence assembly using Unicycler
+
+Unlike SRST2 which utilises marker detection and requires no prior genome assembly, pan-genome comparison requires sequence assembly and annotations. We will start by running Unicycler, which will align the short reads into a few continuous contigs (one long contigs if the genome is complete).
+
+**Quiz**: Activate conda environment for unicycler
+
+**Quiz**: Create folder to store unicycler output, named "unicycler_out"
+
+```{bash eval=F, class.source = 'fold-hide'}
+conda activate unicycler
+mkdir unicycler_out
+```
+
+Running Unicycler is similar to SRST2, although the parameters are slightly different. We can run the command `unicycler`, with the following parameters:
+
+* -t: number of CPUs to process
+* -1: location of input forward sequence
+* -2 location of input reverse sequence
+* -o: folder location for Unicycler assembly output
+
+**Quiz**: Run Unicycler on clinA, with output to unicycler_out/clinA directory
+
+```{bash eval=F, class.source = 'fold-hide'}
+unicycler -t 6 -1 fastp_out/clinA_1.fastq -2 fastp_out/clinA_2.fastq -o unicycler_out/clinA/
+```
+
+**Note**: As with SRST2, Unicycler takes a while to complete, hence in the workshop, the run should be stopped with CTRL+C. Participants should run the following code in their Terminal to copy the pre-computed result to their working directory:
+
+```{bash eval=F}
+rm -rf unicycler_out
+cp -r ~/wgs_completed/unicycler_out/ .
+```
+
+Unicycler will produce nine output files from each run. What we need is the file named assembly.fasta, which contains the assembled genomes in the form of contigs. 
+
+![](input/unicycler_1.png){width=800px}
+
+## Step 5: Sequence annotation using Prokka
+
+Once we have the assembled genomes, we need to annotate the genomes with known functions before we can conduct a pan-genome comparison. We can use [Prokka](https://academic.oup.com/bioinformatics/article/30/14/2068/2390517) for this purpose. 
+
+**Quiz**: Activate conda environment for prokka
+
+**Quiz**: Create directory to store prokka output, named prokka_out
+
+```{bash, eval=F, class.source = 'fold-hide'}
+conda activate prokka
+mkdir prokka_out
+```
+
+We can start the annotation by running the `prokka`, with the following format: prokka \<parameters\> \<input assembled genome\>. Some important parameters for prokka run are:
+
+* --cpus: Number of CPUs for the process
+* --outdir: location for Prokka to store annotated genomes
+
+**Quiz**: Run Prokka for clinA. 
+
+```{bash eval=F, class.source = 'fold-hide'}
+prokka --cpus 0 --outdir prokka_out/clinA/ unicycler_out/clinA/assembly.fasta
+```
+
+It takes around 2 minutes to run this sample with 8 CPUs. After the run has finished, you can go through the `tsv` file to browse through the functional annotations of the assembled genomes. However, the more important file for pan-genome comparison is the `gff` file, which we can export to roary to start our pan-genome comparison analysis.
+
+![prokka output](input/prokka1.png){width=800px}
+**Quiz**: Use while-loop to run Prokka for all samples
+
+```{bash eval=F, class.source = 'fold-hide'}
+while read line; do prokka --cpus 0 --outdir prokka_out/${line}/ unicycler_out/${line}/assembly.fasta; done < names.txt
+```
+
+To save time, let's cancel the above run and copy over the pre-computed genome annotation for all five samples.
+
+```{bash eval=F}
+rm -rf prokka_out
+cp -r ~/wgs_completed/prokka_out .
+rm prokka_out/*gff
+```
+
+
+## Step 6: Pan genome comparison with Roary
+
+Now that we have annotated the genomes from all our samples, we can start the pan-genome comparison between these isolates. This comparison depends on Prokka output, specifically the `gff` file. 
+
+However, notice that the `gff` file from Prokka output all have the same file names. We need to differentiate this files to distinguish between each sample's genome when running a pan-genome comparison. 
+
+**Quiz**: Copy and rename the `gff` file from each sample into their sample name (e.g., prokka_out/clinA/PROKKA_11152022.gff -> clinA.gff)
+
+```{bash eval=F, class.source = 'fold-hide'}
+while read line; do cp prokka_out/${line}/PROKKA_11152022.gff prokka_out/${line}.gff; done < names.txt 
+```
+
+Now, we can run [Roary](https://academic.oup.com/bioinformatics/article/31/22/3691/240757) using our pre-annotated samples. 
+
+**Quiz**: Activate the conda environment for roary
+
+```{bash, eval=F, class.source = 'fold-hide'}
+conda activate roary
+```
+
+We can initiate our pan-genome comparison by running roary with the following format: roary \<parameters\> \<location of gff files\>. Some important parameters are:
+
+* -f: location of output directory
+* -p: number of computing CPUs to use
+* -e: invoke this to enable multiFASTA alignment of core genes using PRANK
+* -n: invoke this to enable fast core gene alignment with MAFFT
+* -v: invoke this to enable verbose output
+
+**Quiz**: Run Roary using the above parameters
+
+```{bash eval=F, class.source = 'fold-hide'}
+roary -f roary_out -p 6 -e -n -v prokka_out/*gff
+```
+
+**Note**: Roary takes a while to complete, hence in the workshop, the run should be stopped with CTRL+C. Participants should run the following code in their Terminal to copy the pre-computed result to their working directory:
+
+```{bash eval=F}
+rm -rf roary_out
+cp -r ~/wgs_completed/roary_out/ .
+```
+
+We can then browse the roary_out folder to see the output of Roary. To generate a phylogenetic tree from Roary's output, we need to use the core_gene_alignment.aln file, which we will export to FastTree:
+
+```{bash, eval=F}
+FastTree -nt -gtr -fastest roary_out/core_gene_alignment.aln > roary_out/my_tree.newick
+```
+
+Where:
+
+* -nt: Nucleotide alignment
+* -gtr: Generalised time-reversible model (produce tree)
+* -fastest: reduce memory usage for faster processing
+
+Again, this will take a while to complete, so we can cancel our current run with CTRL-C, and copy over our pre-computed tree. 
+
+```{bash eval=F}
+rm roary_out/my_tree.newick
+cp ~/wgs_completed/roary_out/my_tree.newick roary_out/my_tree.newick
+```
+
+To visualise the tree file, we can use the web-based [Phandango](https://jameshadfield.github.io/phandango/#/) as it is simple and light. You just have to drop your tree files over the website and it will automatically visualise an interactive tree for you.
+
+![Phandango main page](input/phandango0.png){width=800px}
+
+Visualizing our tree in Phandango, we find that the clinical samples clustered separately from the community ones. Based on the tree, we can deduce that the strains of clinical and community isolates were unrelated, however there seems to be a clonal transmission of ST131 within both the clinical and community settings.
+
+![Phylogenetic tree of the ST131 samples](input/phandango1.png){width=800px}
+
+## Concluding remarks
+
+And there you have it, you have learned how to take in raw whole-genome sequence data, conduct basic quality control on the sequences, and screen for markers using SRST2 to detect MLST profiles, antibiotic resistance genes, and plasmid groups. 
+
+Additionally, you have learned how to assemble genomes from raw whole-genome sequence data using Unicycler, annotate the assembled genomes with Prokka, conduct pan-genome comparison based on the annotated genome with Roary, and create a phylogenetic tree using FastTree. 
+
+In the [next](https://jdwiyanto.github.io/wgs_tutorial2_r/) session, we shall cover how to take in these outputs and work out a publication-ready figures using the R statistical language. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
